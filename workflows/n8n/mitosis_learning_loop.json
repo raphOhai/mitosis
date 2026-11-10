@@ -1,0 +1,283 @@
+{
+  "name": "Mitosis - Learning Loop",
+  "nodes": [
+    {
+      "id": "27de8a9f-30dc-5f62-bedc-1d7765da643a",
+      "name": "Every Day 06:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 6,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cc3ab288-9a16-5fcd-bfb2-1baeba760319",
+      "name": "Fetch Ad Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "url": "=https://graph.facebook.com/v25.0/act_{{ $env.META_AD_ACCOUNT_ID }}/insights",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "level",
+              "value": "ad"
+            },
+            {
+              "name": "date_preset",
+              "value": "last_7d"
+            },
+            {
+              "name": "fields",
+              "value": "ad_name,spend,impressions,actions,purchase_roas"
+            },
+            {
+              "name": "limit",
+              "value": "500"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body.paging.next }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.paging || !$response.body.paging.next }}",
+              "limitPagesFetched": true,
+              "maxRequests": 50,
+              "requestInterval": 250
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "mitosisMetaGraph",
+          "name": "Meta Graph API (Mitosis)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "7ee89a43-5632-5979-b436-6dd012dab559",
+      "name": "Score Ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const ASSET_NAME = /^[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_(9x16|4x5|1x1)$/;\nconst PURCHASE_TYPES = ['omni_purchase', 'purchase', 'app_custom_event.fb_mobile_purchase', 'offsite_conversion.fb_pixel_purchase'];\nconst minSpend = Number($env.MITOSIS_MIN_SPEND || 20);\nconst targetRoas = Number($env.MITOSIS_TARGET_ROAS || 1);\n\nconst purchaseValue = (entries) => {\n  for (const type of PURCHASE_TYPES) {\n    const entry = (entries || []).find((candidate) => candidate.action_type === type);\n    if (entry) {\n      return Number(entry.value) || 0;\n    }\n  }\n  return 0;\n};\n\nconst ads = new Map();\nfor (const row of $input.all().flatMap((item) => item.json.data || [])) {\n  const name = String(row.ad_name || '').trim();\n  if (!ASSET_NAME.test(name)) {\n    continue;\n  }\n  const spend = Number(row.spend) || 0;\n  const ad = ads.get(name) || { ad_name: name, spend: 0, purchases: 0, revenue: 0 };\n  ad.spend += spend;\n  ad.purchases += purchaseValue(row.actions);\n  ad.revenue += purchaseValue(row.purchase_roas) * spend;\n  ads.set(name, ad);\n}\n\nconst eligible = [...ads.values()]\n  .filter((ad) => ad.spend >= minSpend)\n  .map((ad) => ({ ...ad, roas: ad.spend ? ad.revenue / ad.spend : 0 }));\nif (!eligible.length) {\n  return [];\n}\n\nconst ordered = eligible.map((ad) => ad.roas).sort((a, b) => a - b);\nconst median = ordered[Math.floor((ordered.length - 1) / 2)];\nconst roasBar = Math.max(targetRoas, median);\nconst scored = eligible.map((ad) => ({ ...ad, win: ad.purchases > 0 && ad.roas >= roasBar }));\nconst rows = scored.map((ad) => [ad.ad_name, ad.spend.toFixed(2), Math.round(ad.purchases), ad.roas.toFixed(3), ad.win ? 1 : 0].join(','));\nconst csv = ['ad_name,spend,purchases,roas,win', ...rows].join('\\n') + '\\n';\nconst day = new Date().toISOString().slice(0, 10);\n\nreturn [\n  {\n    json: {\n      ads: ads.size,\n      eligible: scored.length,\n      wins: scored.filter((ad) => ad.win).length,\n      spend: Number(scored.reduce((sum, ad) => sum + ad.spend, 0).toFixed(2)),\n      roas_bar: Number(roasBar.toFixed(3)),\n      min_spend: minSpend,\n    },\n    binary: {\n      results: {\n        data: Buffer.from(csv, 'utf8').toString('base64'),\n        mimeType: 'text/csv',\n        fileName: `meta_results_${day}.csv`,\n        fileExtension: 'csv',\n      },\n    },\n  },\n];\n"
+      }
+    },
+    {
+      "id": "93044630-a74d-5735-bf72-333921fdbf24",
+      "name": "Send Results to Mitosis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.MITOSIS_URL }}/api/learn",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "results"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "1350649a-303e-5e72-a777-62d279f2fc10",
+      "name": "Rank Archetypes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const stats = $('Score Ads').first().json;\nconst response = $input.first().json;\nconst factors = response.factors || (response.priors || {}).factors || {};\nconst archetypes = factors.archetype || factors.hook_archetype || [];\n\nconst toEntry = (name, arm) => ({\n  name,\n  mean: Number(arm.mean ?? arm.alpha / (arm.alpha + arm.beta)) || 0,\n  wins: arm.wins || 0,\n  trials: arm.trials || 0,\n});\n\nconst ranked = Array.isArray(archetypes)\n  ? archetypes.map((row) => toEntry(row.level || row.name, row))\n  : Object.entries(archetypes).map(([name, arm]) => toEntry(name, arm));\nconst top = ranked.sort((a, b) => b.mean - a.mean).slice(0, 3);\n\nconst lines = [\n  '*Mitosis learning loop* (Meta insights, last 7 days)',\n  `${stats.ads} Mitosis ads found | ${stats.eligible} with at least $${stats.min_spend} spend | ${stats.wins} winners at ROAS >= ${stats.roas_bar}`,\n  top.length ? 'Top hook archetypes now:' : 'No archetype priors came back yet.',\n  ...top.map((entry, index) => `${index + 1}. ${entry.name}: ${(entry.mean * 100).toFixed(0)}% expected win rate (${entry.wins}/${entry.trials} wins)`),\n];\nif (top.length) {\n  lines.push('The next experiment plans will lean toward these archetypes.');\n}\n\nreturn [{ json: { slack_text: lines.join('\\n'), top } }];\n"
+      }
+    },
+    {
+      "id": "02460a65-68d0-5c9c-a6a0-6081547d0aef",
+      "name": "Post Learning Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1100,
+        200
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#creative-pipeline",
+          "mode": "name"
+        },
+        "text": "={{ $json.slack_text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurl_links": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "mitosisSlack",
+          "name": "Slack (Mitosis)"
+        }
+      }
+    },
+    {
+      "id": "1a205deb-0dd6-53cd-a7bc-3e3ecba5eefd",
+      "name": "Alert Learning Failure",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        460
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#creative-pipeline",
+          "mode": "name"
+        },
+        "text": "=*Mitosis needs attention* ({{ $workflow.name }})\nStep: {{ $prevNode.name }}\n{{ $json.error ? ($json.error.message || $json.error) : 'Run ' + ($json.run_id || '') + ' stopped with status ' + ($json.status || 'unknown') + ($json.message ? ': ' + $json.message : '') }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurl_links": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "mitosisSlack",
+          "name": "Slack (Mitosis)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Day 06:00": {
+      "main": [
+        [
+          {
+            "node": "Fetch Ad Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Ad Insights": {
+      "main": [
+        [
+          {
+            "node": "Score Ads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Learning Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Ads": {
+      "main": [
+        [
+          {
+            "node": "Send Results to Mitosis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Results to Mitosis": {
+      "main": [
+        [
+          {
+            "node": "Rank Archetypes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Learning Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Archetypes": {
+      "main": [
+        [
+          {
+            "node": "Post Learning Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveDataErrorExecution": "all"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

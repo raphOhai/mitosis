@@ -1,0 +1,875 @@
+{
+  "name": "Mitosis - Winner Multiplier",
+  "nodes": [
+    {
+      "id": "ab192a53-4e42-5bfe-a3d6-1d3b18f487fe",
+      "name": "New Winner in Drive",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "={{ $env.MITOSIS_WINNERS_FOLDER_ID }}",
+          "mode": "id"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mitosisGoogleDrive",
+          "name": "Google Drive (Mitosis)"
+        }
+      }
+    },
+    {
+      "id": "8058da34-9468-55f4-a0df-e98cf41c4a69",
+      "name": "Is Video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a29f8f20-8194-5833-b69e-c1822bb80678",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "video/",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "0b2b4b4e-d6a8-5827-a23f-6823108e2612",
+      "name": "Describe Winner",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const file = $json;\nconst baseName = String(file.name || file.id).replace(/\\.[^.]+$/, '');\nconst folderId = (file.parents || [])[0] || '';\nconst quoteForDrive = (value) => String(value).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\nconst winnerId = baseName.replace(/[^A-Za-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || file.id;\n\nreturn {\n  json: {\n    file_id: file.id,\n    file_name: file.name,\n    folder_id: folderId,\n    winner_id: winnerId,\n    description: String(file.description || '').trim(),\n    script_query: `'${quoteForDrive(folderId)}' in parents and name = '${quoteForDrive(baseName)}.txt' and trashed = false`,\n  },\n};\n"
+      }
+    },
+    {
+      "id": "665d822a-1eaf-53d0-b761-b59b5fc9b965",
+      "name": "Download Winner",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "video"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mitosisGoogleDrive",
+          "name": "Google Drive (Mitosis)"
+        }
+      }
+    },
+    {
+      "id": "2297387f-d9e7-52a2-a03c-daadcd455eaa",
+      "name": "Find Script File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Describe Winner').item.json.script_query }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name)"
+            },
+            {
+              "name": "pageSize",
+              "value": "1"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mitosisGoogleDrive",
+          "name": "Google Drive (Mitosis)"
+        }
+      }
+    },
+    {
+      "id": "99b6c14f-9a4f-590d-805f-1c87e96c8d6d",
+      "name": "Has Script File?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a5912919-b84b-53f4-9d26-c6d6cf2639c5",
+              "leftValue": "={{ ($json.files || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "7750da79-4f7d-5d42-801b-d1acf85fd0d4",
+      "name": "Read Script Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        180
+      ],
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.files[0].id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "alt",
+              "value": "media"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "script"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mitosisGoogleDrive",
+          "name": "Google Drive (Mitosis)"
+        }
+      }
+    },
+    {
+      "id": "241b8f04-b756-5578-b0e9-7b24fab3c0f5",
+      "name": "Build Run Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const winner = $('Describe Winner').item.json;\nconst video = $('Download Winner').item.binary.video;\nconst script = String($json.script || winner.description || '').trim();\n\nif (!video) {\n  throw new Error(`Could not download ${winner.file_name} from Google Drive`);\n}\nif (!script) {\n  const companion = winner.file_name.replace(/\\.[^.]+$/, '') + '.txt';\n  throw new Error(`No script for ${winner.file_name}: add ${companion} to the Winners folder or fill the file description`);\n}\n\nreturn {\n  json: { winner_id: winner.winner_id, file_name: winner.file_name, script },\n  binary: { video },\n};\n"
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "5f4affd3-1618-55be-878f-948d87fc1e9a",
+      "name": "Start Mitosis Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.MITOSIS_URL }}/api/runs",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "video",
+              "inputDataFieldName": "video"
+            },
+            {
+              "parameterType": "formData",
+              "name": "script",
+              "value": "={{ $json.script }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "winner_id",
+              "value": "={{ $json.winner_id }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "variants",
+              "value": "10"
+            },
+            {
+              "parameterType": "formData",
+              "name": "aspects",
+              "value": "9:16,4:5,1:1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "50a88248-0a8a-579b-be83-4687eec98b64",
+      "name": "Wait 30s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        300
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "webhookId": "f890a830-caa6-528d-95a4-9e1fb869fc93"
+    },
+    {
+      "id": "fc851f19-59dc-5f14-aad3-3e8caedc9419",
+      "name": "Get Run Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        300
+      ],
+      "parameters": {
+        "url": "={{ $env.MITOSIS_URL }}/api/runs/{{ $('Start Mitosis Run').item.json.run_id }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "4bc23039-f237-5e2c-a35c-623f58325014",
+      "name": "Run Finished?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2420,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5b54590d-4e1c-581b-9d4f-3cd75c3d07e7",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "42538aa4-9a73-522d-85ff-2993caa54f5c",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "d4526c94-f844-568e-ba23-e0a5ba541175",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 120,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "91d4c295-b895-577c-9b8d-209feca4a364",
+      "name": "Run Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1b98b91d-b492-5106-9e89-cf186b9eded3",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "703fddce-0394-5f7f-a87f-90924e12b687",
+      "name": "Fetch Manifest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        100
+      ],
+      "parameters": {
+        "url": "={{ $env.MITOSIS_URL }}/files/{{ $('Start Mitosis Run').item.json.run_id }}/manifest.json",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "c7d23698-efd1-555b-9a87-af56df042ba8",
+      "name": "Summarize Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const base = String($env.MITOSIS_URL || '').replace(/\\/+$/, '');\nconst money = (value) => `$${Number(value || 0).toFixed(2)}`;\nconst launchable = (result) => result.review !== 'rejected' && (result.status === 'passed' || result.review === 'approved');\n\nconst relativePath = (path, outDir, runId) => {\n  const value = String(path || '');\n  const root = String(outDir || '').replace(/\\/+$/, '');\n  if (root && value.startsWith(`${root}/`)) {\n    return value.slice(root.length + 1);\n  }\n  const marker = `/${runId}/`;\n  const index = value.lastIndexOf(marker);\n  return index >= 0 ? value.slice(index + marker.length) : value.replace(/^\\/+/, '');\n};\n\nconst fileUrl = (runId, relative) =>\n  `${base}/files/${encodeURIComponent(runId)}/${relative.split('/').map(encodeURIComponent).join('/')}`;\n\nreturn $input.all().map(({ json: manifest }) => {\n  const runId = manifest.run_id;\n  const winnerId = (manifest.winner || {}).id || 'winner';\n  const totals = manifest.totals || {};\n  const results = manifest.results || [];\n  const ready = results.filter(launchable);\n  const uploads = ready.flatMap((result) =>\n    (result.renders || []).map((render) => ({\n      run_id: runId,\n      variant_id: result.spec.id,\n      aspect: render.aspect,\n      ad_name: render.name,\n      file_url: fileUrl(runId, relativePath(render.path, manifest.out_dir, runId)),\n    })),\n  );\n  const variants = totals.variants || results.length;\n  const passed = totals.passed || 0;\n  const passRate = variants ? Math.round((100 * passed) / variants) : 0;\n  const reportUrl = fileUrl(runId, 'report.html');\n  const lines = [\n    `*Mitosis multiplied ${winnerId}* (run \\`${runId}\\`, ${manifest.mode || 'unknown'} mode)`,\n    `Variants: ${variants} | passed ${passed} | flagged ${totals.flagged || 0} | failed ${totals.failed || 0} | pass rate ${passRate}%`,\n    `Spend: ${money(totals.usd)} actual | ${money(totals.shadow_usd)} production-equivalent | ${money(totals.shadow_per_variant)} per variant at production prices`,\n    `Time: ${(Number(totals.seconds || 0) / 60).toFixed(1)} min wall | ${Number(totals.seconds_per_variant || 0).toFixed(0)} s per variant | cache hits ${totals.cache_hits || 0}, saved ${money(totals.saved_usd)}`,\n    `Ready to launch: ${ready.length} variants, ${uploads.length} ads`,\n    `<${reportUrl}|Open the run report>`,\n  ];\n\n  return {\n    json: {\n      run_id: runId,\n      winner_id: winnerId,\n      report_url: reportUrl,\n      variants,\n      passed,\n      flagged: totals.flagged || 0,\n      failed: totals.failed || 0,\n      usd: totals.usd || 0,\n      shadow_usd: totals.shadow_usd || 0,\n      uploads,\n      slack_text: lines.join('\\n'),\n    },\n  };\n});\n"
+      }
+    },
+    {
+      "id": "7d2346a6-4eb3-5be6-9cf4-05b6f94eec47",
+      "name": "Post Run Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        3300,
+        0
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#creative-pipeline",
+          "mode": "name"
+        },
+        "text": "={{ $json.slack_text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurl_links": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "mitosisSlack",
+          "name": "Slack (Mitosis)"
+        }
+      }
+    },
+    {
+      "id": "2da39aed-97f6-5bd9-a008-a537771c61ea",
+      "name": "Push to Meta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "41107062-8a08-527f-bb77-e9280619cf7d",
+              "leftValue": "={{ String($env.MITOSIS_PUSH_TO_META || '').toLowerCase() }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "94855fe0-c89a-5f0b-be2f-7e7095f80109",
+      "name": "Split Out Ads",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        200
+      ],
+      "parameters": {
+        "fieldToSplitOut": "uploads",
+        "options": {}
+      }
+    },
+    {
+      "id": "54acc285-b8fe-58b2-887d-d4c862d08925",
+      "name": "Upload to Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3740,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v25.0/act_{{ $env.META_AD_ACCOUNT_ID }}/advideos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_url",
+              "value": "={{ $json.file_url }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.ad_name }}"
+            },
+            {
+              "name": "title",
+              "value": "={{ $json.ad_name }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "mitosisMetaGraph",
+          "name": "Meta Graph API (Mitosis)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "daddd775-bd4c-583c-8837-ad53cdd4a72e",
+      "name": "Alert Failure",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2860,
+        520
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#creative-pipeline",
+          "mode": "name"
+        },
+        "text": "=*Mitosis needs attention* ({{ $workflow.name }})\nStep: {{ $prevNode.name }}\n{{ $json.error ? ($json.error.message || $json.error) : 'Run ' + ($json.run_id || '') + ' stopped with status ' + ($json.status || 'unknown') + ($json.message ? ': ' + $json.message : '') }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurl_links": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "mitosisSlack",
+          "name": "Slack (Mitosis)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "New Winner in Drive": {
+      "main": [
+        [
+          {
+            "node": "Is Video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Video?": {
+      "main": [
+        [
+          {
+            "node": "Describe Winner",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Describe Winner": {
+      "main": [
+        [
+          {
+            "node": "Download Winner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Winner": {
+      "main": [
+        [
+          {
+            "node": "Find Script File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Script File": {
+      "main": [
+        [
+          {
+            "node": "Has Script File?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Script File?": {
+      "main": [
+        [
+          {
+            "node": "Read Script Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Script Text": {
+      "main": [
+        [
+          {
+            "node": "Build Run Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Request": {
+      "main": [
+        [
+          {
+            "node": "Start Mitosis Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Mitosis Run": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s": {
+      "main": [
+        [
+          {
+            "node": "Get Run Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Run Status": {
+      "main": [
+        [
+          {
+            "node": "Run Finished?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Finished?": {
+      "main": [
+        [
+          {
+            "node": "Run Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Manifest": {
+      "main": [
+        [
+          {
+            "node": "Summarize Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Run": {
+      "main": [
+        [
+          {
+            "node": "Post Run Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Push to Meta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Meta?": {
+      "main": [
+        [
+          {
+            "node": "Split Out Ads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Split Out Ads": {
+      "main": [
+        [
+          {
+            "node": "Upload to Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Meta": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Alert Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

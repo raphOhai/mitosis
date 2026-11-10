@@ -1,0 +1,42 @@
+voices:
+  warm_30s:
+    label: Warm 30s, reassuring
+    gender: male
+    age: "30s"
+    tone: warm, steady, confessional
+    elevenlabs_id: nPczCjzI2devNBz1zQrb
+    say_voice: "Reed (English (US))"
+    pitch_semitones: -1.0
+  deep_40s:
+    label: Deep 40s, grounded
+    gender: male
+    age: "40s"
+    tone: low, calm, authoritative
+    elevenlabs_id: pNInz6obpgDQGcFmaJgB
+    say_voice: "Rocko (English (US))"
+    pitch_semitones: -3.0
+  casual_20s:
+    label: Casual late 20s, buddy
+    gender: male
+    age: "late 20s"
+    tone: relaxed, conversational, a little playful
+    elevenlabs_id: TX3LPaxmHKxFdv7VOQHJ
+    say_voice: "Eddy (English (US))"
+    pitch_semitones: 1.5
+  calm_coach:
+    label: Calm coach, measured
+    gender: male
+    age: "40s"
+    tone: measured, empathetic, expert
+    elevenlabs_id: cjVigY5qzO86Huf0OWal
+    say_voice: Fred
+    pitch_semitones: -2.0
+    stability: 0.6
+  partner_pov:
+    label: Partner POV, female 30s
+    gender: female
+    age: "30s"
+    tone: honest, gentle, a little vulnerable
+    elevenlabs_id: EXAVITQu4vr4xnSDxMaL
+    say_voice: "Samantha (English (US))"
+    pitch_semitones: 4.0

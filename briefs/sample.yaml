@@ -1,0 +1,15 @@
+winner:
+  id: W017
+  video: ../samples/winner.mp4
+  script: ../samples/winner_script.txt
+music: ../samples/music_bed.wav
+variants: 10
+aspects: ["9:16", "4:5", "1:1"]
+voices: [warm_30s, deep_40s, casual_20s, calm_coach, partner_pov]
+locations: [original, living_room_evening, kitchen_morning, parked_car, balcony_golden_hour, home_office]
+hook_count: 6
+budget_usd: 25
+max_attempts: 2
+seed: 17
+body_mode: auto
+notes: Confessional male POV, couples-as-roommates angle. Textless master with separate music stem.

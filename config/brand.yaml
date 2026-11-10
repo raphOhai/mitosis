@@ -1,0 +1,56 @@
+name: Betterly
+product: Betterly
+category: relationships and intimacy coaching app
+audience: US men 28-45 in long-term relationships
+cta: Try Betterly free
+tone: honest, warm, non-judgmental, slightly confessional, never explicit
+shot_style: vertical smartphone UGC, handheld, natural window light, shallow depth of field, realistic skin texture, no text, no logos, no watermarks
+naming: "{brand}_{winner}_{variant}_{hook}_{voice}_{location}_{aspect}"
+min_hook_seconds: 1.4
+max_hook_seconds: 4.5
+identity_threshold: 0.42
+image_identity_threshold: 0.45
+
+subtitle:
+  font: Arial Black
+  size_ratio: 0.062
+  primary: "#FFFFFF"
+  highlight: "#FFD84D"
+  outline: "#000000"
+  outline_ratio: 0.09
+  uppercase: true
+  max_words: 3
+  max_chars: 18
+  max_gap: 0.45
+  pop: true
+  anchor: {"9:16": 0.60, "4:5": 0.74, "1:1": 0.76}
+
+headline:
+  font: Arial Black
+  size_ratio: 0.056
+  color: "#111111"
+  box: "#FFFFFF"
+  box_opacity: 0.94
+  max_chars_per_line: 22
+  anchor: {"9:16": 0.20, "4:5": 0.12, "1:1": 0.12}
+
+safe_zones:
+  "9:16": {top: 0.14, bottom: 0.35, left: 0.06, right: 0.06}
+  "4:5": {top: 0.06, bottom: 0.10, left: 0.05, right: 0.05}
+  "1:1": {top: 0.06, bottom: 0.10, left: 0.05, right: 0.05}
+
+loudness:
+  target_lufs: -14.0
+  true_peak: -1.0
+  lra: 11.0
+  tolerance: 1.5
+  bed_gain_db: -20.0
+
+video:
+  fps: 30
+  crf: 19
+  preset: medium
+  codec: libx264
+  pix_fmt: yuv420p
+  audio_bitrate: 192k
+  sample_rate: 48000

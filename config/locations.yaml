@@ -1,0 +1,26 @@
+locations:
+  original:
+    label: Original set
+    prompt: the same room and lighting as the reference frames
+    grade: neutral
+    original: true
+  living_room_evening:
+    label: Living room, evening
+    prompt: a lived-in living room in the evening, warm practical lamps, couch, soft tungsten light
+    grade: warm
+  kitchen_morning:
+    label: Kitchen, morning
+    prompt: a bright kitchen in the morning, coffee mug on the counter, cool daylight from a window
+    grade: cool
+  parked_car:
+    label: Parked car
+    prompt: sitting in the driver seat of a parked car, daylight through the windshield, seatbelt off, phone-on-dashboard angle
+    grade: teal_orange
+  balcony_golden_hour:
+    label: Balcony, golden hour
+    prompt: an apartment balcony at golden hour, city behind, warm rim light
+    grade: golden
+  home_office:
+    label: Home office, night
+    prompt: a home office at night, monitor glow, dim background, moody contrast
+    grade: moody

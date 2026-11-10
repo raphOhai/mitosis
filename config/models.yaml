@@ -1,0 +1,344 @@
+chains:
+  llm: [claude]
+  image: [nano_banana_pro, seedream_edit, flux2_edit, comfyui_flux_pulid, offline_still]
+  video: [kling_i2v, veo_i2v, seedance_i2v, runway_gen4, higgsfield_i2v, offline_kenburns]
+  speech: [elevenlabs_tts, elevenlabs_tts_flash, offline_say]
+  voice: [elevenlabs_sts, offline_pitch]
+  transcribe: [elevenlabs_scribe, offline_align]
+  lipsync: [sync_lipsync]
+  upscale: [topaz_video, offline_lanczos]
+
+models:
+  claude:
+    provider: anthropic
+    kind: llm
+    model: claude-opus-5-5
+    requires: [ANTHROPIC_API_KEY]
+    price: {input_mtok: 4.0, output_mtok: 20.0, cache_write_mtok: 5.0, cache_read_mtok: 0.20}
+    concurrency: 4
+    timeout: 600
+    params: {effort: medium, fallbacks: true, sdk_retries: 1, max_image_edge: 1568}
+    notes: >-
+      Claude Opus 5.5, $4/$20 per MTok, cache reads $0.20. Structured outputs via output_config.format,
+      server-side refusal fallbacks (beta server-side-fallback-2026-07-01, fallbacks=default).
+      Source https://platform.claude.com/docs/en/about-claude/pricing (checked 2026-11-10).
+
+  nano_banana_pro:
+    provider: fal
+    kind: image
+    model: fal-ai/nano-banana-pro/edit
+    requires: [FAL_KEY]
+    price: {image: 0.15}
+    concurrency: 4
+    timeout: 300
+    params:
+      max_references: 6
+      poll_interval: 2.0
+      fields: {prompt: prompt, images: image_urls, aspect: aspect_ratio, seed: seed}
+      extra: {num_images: 1, output_format: png, resolution: 2K}
+    notes: >-
+      Gemini 3 Pro Image edit on fal, up to 14 reference images, aspect_ratio accepts 9:16, 4:5 and 1:1,
+      $0.15 per image at 1K/2K (4K is 2x). Source https://fal.ai/models/fal-ai/nano-banana-pro/edit/llms.txt (checked 2026-11-10).
+
+  seedream_edit:
+    provider: fal
+    kind: image
+    model: fal-ai/bytedance/seedream/v4.5/edit
+    requires: [FAL_KEY]
+    price: {image: 0.04}
+    concurrency: 4
+    timeout: 300
+    params:
+      max_references: 6
+      poll_interval: 2.0
+      fields: {prompt: prompt, images: image_urls, aspect: image_size, seed: seed}
+      aspects:
+        "9:16": {width: 1440, height: 2560}
+        "4:5": {width: 1728, height: 2160}
+        "1:1": {width: 2048, height: 2048}
+      extra: {num_images: 1, enable_safety_checker: true}
+    notes: >-
+      Seedream 4.5 edit, up to 10 references, no aspect_ratio field so image_size is sent as explicit
+      width/height (min 2560x1440 total pixels), $0.04 per image.
+      Source https://fal.ai/models/fal-ai/bytedance/seedream/v4.5/edit/api (checked 2026-11-10).
+
+  flux2_edit:
+    provider: fal
+    kind: image
+    model: fal-ai/flux-2-pro/edit
+    requires: [FAL_KEY]
+    price: {image: 0.07}
+    concurrency: 4
+    timeout: 300
+    params:
+      max_references: 4
+      poll_interval: 2.0
+      fields: {prompt: prompt, images: image_urls, aspect: image_size, seed: seed}
+      aspects:
+        "9:16": {width: 1088, height: 1920}
+        "4:5": {width: 1088, height: 1360}
+        "1:1": {width: 1088, height: 1088}
+      extra: {output_format: png, safety_tolerance: "2", enable_safety_checker: true}
+    notes: >-
+      FLUX.2 [pro] edit with multi-reference input. Billed $0.03 for the first megapixel plus $0.015 per extra
+      input/output megapixel; ~$0.07 for a 1088x1920 frame with four references.
+      Source https://fal.ai/models/fal-ai/flux-2-pro/edit/llms.txt (checked 2026-11-10).
+
+  comfyui_flux_pulid:
+    provider: comfyui
+    kind: image
+    model: workflows/comfyui/hero_keyframe_flux_pulid.json
+    requires: [COMFYUI_URL]
+    price: {image: 0.0}
+    concurrency: 1
+    timeout: 600
+    params:
+      poll_interval: 1.5
+      megapixels: 1.0
+      multiple: 16
+      output: "9"
+      bypass: [lora]
+      values: {lora: null, lora_strength: 0.85, identity_weight: 0.9}
+      bindings:
+        prompt: ["6", inputs, text]
+        negative: ["7", inputs, text]
+        seed: ["17", inputs, seed]
+        reference: ["10", inputs, image]
+        width: [["16", inputs, width], ["14", inputs, width]]
+        height: [["16", inputs, height], ["14", inputs, height]]
+        lora: ["4", inputs, lora_name]
+        lora_strength: ["4", inputs, strength_model]
+        identity_weight: ["13", inputs, weight]
+    notes: >-
+      Self-hosted FLUX.1-dev + PuLID-Flux (ComfyUI-PuLID-Flux nodes) with optional character LoRA; the LoRA node is
+      bypassed while values.lora is null. Needs flux1-dev, t5xxl_fp16, clip_l, ae, pulid_flux_v0.9.1, EVA-CLIP and
+      InsightFace antelopev2 on the ComfyUI host. Cost is GPU time only.
+
+  kling_i2v:
+    provider: fal
+    kind: video
+    model: fal-ai/kling-video/v3/pro/image-to-video
+    requires: [FAL_KEY]
+    price: {second: 0.112}
+    durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    concurrency: 3
+    timeout: 900
+    params:
+      poll_interval: 3.0
+      fields: {prompt: prompt, image: start_image_url, duration: duration, seed: null, aspect: null}
+      duration_template: "{seconds}"
+      extra:
+        generate_audio: false
+        cfg_scale: 0.5
+        negative_prompt: blur, distortion, low quality, morphing face, extra people, scene cut, on-screen text, watermark
+    notes: >-
+      Kling 3.0 Pro image-to-video, start_image_url, duration "3".."15" as a string, aspect follows the keyframe,
+      $0.112/s with audio off ($0.168/s with audio). Source https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video/llms.txt
+      (checked 2026-11-10).
+
+  veo_i2v:
+    provider: fal
+    kind: video
+    model: fal-ai/veo3.1/fast/image-to-video
+    requires: [FAL_KEY]
+    price: {second: 0.10}
+    durations: [4, 6, 8]
+    concurrency: 2
+    timeout: 900
+    params:
+      poll_interval: 3.0
+      fields: {prompt: prompt, image: image_url, duration: duration, seed: seed, aspect: aspect_ratio}
+      duration_template: "{seconds}s"
+      aspects: {"9:16": "9:16", "4:5": "9:16", "1:1": "9:16"}
+      extra: {generate_audio: false, resolution: 1080p, auto_fix: true}
+    notes: >-
+      Veo 3.1 Fast image-to-video, duration "4s"/"6s"/"8s", aspect_ratio 9:16, $0.10/s without audio at 720p/1080p
+      ($0.15/s with audio). Source https://fal.ai/models/fal-ai/veo3.1/fast/image-to-video/llms.txt (checked 2026-11-10).
+
+  seedance_i2v:
+    provider: fal
+    kind: video
+    model: bytedance/seedance-2.0/image-to-video
+    requires: [FAL_KEY]
+    price: {second: 0.3034}
+    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    concurrency: 3
+    timeout: 900
+    params:
+      poll_interval: 3.0
+      fields: {prompt: prompt, image: image_url, duration: duration, seed: null, aspect: aspect_ratio}
+      duration_template: "{seconds}"
+      aspects: {"9:16": "9:16", "4:5": "3:4", "1:1": "1:1"}
+      extra: {resolution: 720p, generate_audio: false}
+    notes: >-
+      Seedance 2.0 image-to-video, duration "4".."15", no seed input, $0.3034/s at 720p.
+      Source https://fal.ai/models/bytedance/seedance-2.0/image-to-video/llms.txt (checked 2026-11-10).
+
+  runway_gen4:
+    provider: runway
+    kind: video
+    model: gen4_turbo
+    requires: [RUNWAYML_API_SECRET]
+    price: {second: 0.05}
+    durations: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    concurrency: 2
+    timeout: 900
+    params:
+      api_version: "2024-11-06"
+      poll_interval: 5.0
+      ratios: {"9:16": "720:1280", "4:5": "832:1104", "1:1": "960:960"}
+      extra: {contentModeration: {publicFigureThreshold: auto}}
+    notes: >-
+      Runway gen4_turbo image_to_video, 5 credits/s at $0.01 per credit, integer duration 2-10, data URI prompt image
+      up to 5 MB encoded. Sources https://docs.dev.runwayml.com/api.md and https://docs.dev.runwayml.com/guides/pricing/
+      (checked 2026-11-10).
+
+  higgsfield_i2v:
+    provider: higgsfield
+    kind: video
+    model: kling-video/v2.6/pro/image-to-video
+    requires: [HIGGSFIELD_API_KEY, HIGGSFIELD_API_SECRET]
+    price: {second: 0.07}
+    durations: [5, 10]
+    concurrency: 2
+    timeout: 900
+    params:
+      poll_interval: 4.0
+      duration_numeric: true
+      fields: {prompt: prompt, image: image_url, duration: duration, aspect: aspect_ratio, seed: null}
+      aspects: {"9:16": "9:16", "4:5": "9:16", "1:1": "1:1"}
+      extra: {sound: "off", cfg_scale: 0.5}
+    notes: >-
+      Higgsfield API (api.higgsfield.ai, Authorization Key id:secret, uploads via /files/generate-upload-url, polling
+      /requests/{id}/status). The DoP models are not in the current public docs, so this routes to Kling 2.6 Pro at the
+      starting rate of $0.07/s; any documented model path works by changing model, fields and extra.
+      Sources https://docs.higgsfield.ai/docs/models/kling-2-6/pro-image-to-video.md and https://higgsfield.ai/blog/higgsfield-api
+      (checked 2026-11-10).
+
+  elevenlabs_tts:
+    provider: elevenlabs
+    kind: speech
+    model: eleven_multilingual_v2
+    requires: [ELEVENLABS_API_KEY]
+    price: {kchar: 0.08}
+    concurrency: 4
+    timeout: 120
+    params:
+      output_format: mp3_44100_128
+      speed: true
+      extra: {apply_text_normalization: auto}
+    notes: >-
+      Multilingual v2 via /v1/text-to-speech/{voice_id}/with-timestamps (character alignment), $0.08 per 1k characters.
+      Sources https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps and https://elevenlabs.io/pricing/api
+      (checked 2026-11-10).
+
+  elevenlabs_tts_flash:
+    provider: elevenlabs
+    kind: speech
+    model: eleven_flash_v2_5
+    requires: [ELEVENLABS_API_KEY]
+    price: {kchar: 0.04}
+    concurrency: 4
+    timeout: 120
+    params:
+      output_format: mp3_44100_128
+      speed: true
+    notes: >-
+      Flash v2.5 fallback with the same voices and timestamps, $0.04 per 1k characters.
+      Source https://elevenlabs.io/pricing/api (checked 2026-11-10).
+
+  elevenlabs_sts:
+    provider: elevenlabs
+    kind: voice
+    model: eleven_multilingual_sts_v2
+    requires: [ELEVENLABS_API_KEY]
+    price: {minute: 0.12}
+    concurrency: 3
+    timeout: 300
+    params:
+      path: /v1/voice-changer/{voice_id}
+      output_format: mp3_44100_128
+      remove_background_noise: true
+    notes: >-
+      Voice Changer (speech-to-speech) keeps the original timing so lip-sync holds; canonical path is now
+      /v1/voice-changer/{voice_id} (/v1/speech-to-speech/{voice_id} is the legacy alias), $0.12 per minute.
+      Sources https://elevenlabs.io/docs/api-reference/speech-to-speech/convert and https://elevenlabs.io/pricing/api (checked 2026-11-10).
+
+  elevenlabs_scribe:
+    provider: elevenlabs
+    kind: transcribe
+    model: scribe_v2
+    requires: [ELEVENLABS_API_KEY]
+    price: {minute: 0.0045}
+    concurrency: 2
+    timeout: 300
+    params: {language_code: en, keyterms: true, max_keyterms: 50}
+    notes: >-
+      Scribe v2 with word timestamps and keyterm prompting from the script ($0.22/h plus $0.05/h for keyterms).
+      Sources https://elevenlabs.io/docs/api-reference/speech-to-text/convert and https://elevenlabs.io/pricing/api (checked 2026-11-10).
+
+  sync_lipsync:
+    provider: fal
+    kind: lipsync
+    model: fal-ai/sync-lipsync/v2
+    requires: [FAL_KEY]
+    price: {second: 0.05}
+    concurrency: 2
+    timeout: 900
+    params:
+      poll_interval: 3.0
+      extra: {sync_mode: cut_off}
+    notes: >-
+      sync. lipsync-2 on fal, $3 per minute (lipsync-2-pro endpoint fal-ai/sync-lipsync/v2/pro is $5 per minute).
+      Source https://fal.ai/models/fal-ai/sync-lipsync/v2/llms.txt (checked 2026-11-10).
+
+  topaz_video:
+    provider: fal
+    kind: upscale
+    model: fal-ai/topaz/upscale/video
+    requires: [FAL_KEY]
+    price: {second: 0.08}
+    concurrency: 2
+    timeout: 900
+    params:
+      poll_interval: 3.0
+      extra: {model: Proteus, H264_output: true}
+    notes: >-
+      Topaz video upscale, $0.08/s for output above 1080p ($0.02/s up to 1080p), H.264 output for compatibility.
+      Source https://fal.ai/models/fal-ai/topaz/upscale/video/llms.txt (checked 2026-11-10).
+
+  offline_still:
+    provider: offline
+    kind: image
+    offline: true
+    concurrency: 4
+
+  offline_kenburns:
+    provider: offline
+    kind: video
+    offline: true
+    concurrency: 4
+
+  offline_say:
+    provider: offline
+    kind: speech
+    offline: true
+    concurrency: 4
+
+  offline_pitch:
+    provider: offline
+    kind: voice
+    offline: true
+    concurrency: 4
+
+  offline_align:
+    provider: offline
+    kind: transcribe
+    offline: true
+    concurrency: 2
+
+  offline_lanczos:
+    provider: offline
+    kind: upscale
+    offline: true
+    concurrency: 2

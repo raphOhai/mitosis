@@ -1,0 +1,151 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {"title": "FLUX.1-dev diffusion model"}
+  },
+  "2": {
+    "class_type": "DualCLIPLoader",
+    "inputs": {
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux"
+    },
+    "_meta": {"title": "FLUX text encoders"}
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "ae.safetensors"
+    },
+    "_meta": {"title": "FLUX VAE"}
+  },
+  "4": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["1", 0],
+      "lora_name": "hero_character.safetensors",
+      "strength_model": 0.85
+    },
+    "_meta": {"title": "Hero character LoRA"}
+  },
+  "5": {
+    "class_type": "PulidFluxModelLoader",
+    "inputs": {
+      "pulid_file": "pulid_flux_v0.9.1.safetensors"
+    },
+    "_meta": {"title": "PuLID-Flux weights"}
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "photo of the same man as the reference, natural light, shot on a phone, vertical framing",
+      "clip": ["2", 0]
+    },
+    "_meta": {"title": "Positive prompt"}
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "",
+      "clip": ["2", 0]
+    },
+    "_meta": {"title": "Negative prompt"}
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["17", 0],
+      "vae": ["3", 0]
+    },
+    "_meta": {"title": "Decode latent"}
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "mitosis/hero_keyframe",
+      "images": ["8", 0]
+    },
+    "_meta": {"title": "Save keyframe"}
+  },
+  "10": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "hero_reference.png"
+    },
+    "_meta": {"title": "Hero reference face"}
+  },
+  "11": {
+    "class_type": "PulidFluxEvaClipLoader",
+    "inputs": {},
+    "_meta": {"title": "EVA-CLIP encoder"}
+  },
+  "12": {
+    "class_type": "PulidFluxInsightFaceLoader",
+    "inputs": {
+      "provider": "CUDA"
+    },
+    "_meta": {"title": "InsightFace analyser"}
+  },
+  "13": {
+    "class_type": "ApplyPulidFlux",
+    "inputs": {
+      "model": ["4", 0],
+      "pulid_flux": ["5", 0],
+      "eva_clip": ["11", 0],
+      "face_analysis": ["12", 0],
+      "image": ["10", 0],
+      "weight": 0.9,
+      "start_at": 0.0,
+      "end_at": 1.0
+    },
+    "_meta": {"title": "Apply PuLID identity"}
+  },
+  "14": {
+    "class_type": "ModelSamplingFlux",
+    "inputs": {
+      "model": ["13", 0],
+      "max_shift": 1.15,
+      "base_shift": 0.5,
+      "width": 752,
+      "height": 1328
+    },
+    "_meta": {"title": "FLUX sampling shift"}
+  },
+  "15": {
+    "class_type": "FluxGuidance",
+    "inputs": {
+      "conditioning": ["6", 0],
+      "guidance": 3.5
+    },
+    "_meta": {"title": "Distilled guidance"}
+  },
+  "16": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": {
+      "width": 752,
+      "height": 1328,
+      "batch_size": 1
+    },
+    "_meta": {"title": "Empty latent"}
+  },
+  "17": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["14", 0],
+      "positive": ["15", 0],
+      "negative": ["7", 0],
+      "latent_image": ["16", 0],
+      "seed": 7,
+      "steps": 28,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    },
+    "_meta": {"title": "Sampler"}
+  }
+}

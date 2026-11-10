@@ -1,0 +1,40 @@
+[project]
+name = "mitosis"
+version = "0.9.0"
+description = "Winner multiplier: turns one proven ad into dozens of on-brand, identity-locked, policy-checked variations."
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.7",
+  "pyyaml>=6",
+  "httpx>=0.27",
+  "typer>=0.12",
+  "rich>=13",
+  "numpy>=1.26",
+  "opencv-python-headless>=4.9",
+  "pillow>=10",
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+live = ["anthropic>=0.60", "fal-client>=0.5"]
+stems = ["demucs>=4.0"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+mitosis = "mitosis.cli:app"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["mitosis*"]
+
+[tool.setuptools.package-data]
+mitosis = ["service/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

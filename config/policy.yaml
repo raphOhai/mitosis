@@ -1,0 +1,416 @@
+standard: Meta Advertising Standards
+reviewed: "2026-11-10"
+sources:
+  - https://transparency.meta.com/policies/ad-standards/objectionable-content/privacy-violations-personal-attributes/
+  - https://transparency.meta.com/policies/ad-standards/objectionable-content/adult-sexual-solicitation-and-sexually-explicit-language/
+  - https://transparency.meta.com/policies/ad-standards/restricted-goods-services/health-wellness
+  - https://transparency.meta.com/policies/ad-standards/objectionable-content/personal-health-and-appearance
+  - https://transparency.meta.com/policies/ad-standards/objectionable-content/low-quality-or-disruptive-experiences
+
+audience:
+  min_age: 18
+
+win_rule:
+  roas_target: 1.5
+  cpa_target: 40.0
+  min_spend: 25.0
+
+rules:
+  - id: personal_attributes
+    category: Privacy violations and personal attributes
+    severity: block
+    kind: proximity
+    window: 6
+    referents: [you, your, yours, yourself, "you're", youre, "you've", "you'll", "you'd", ur, u]
+    adjacent_referents: [other, fellow]
+    openers: [ever, feeling, "still feeling", "tired of", "sick of", "struggling with", "dealing with", "suffering from", questioning]
+    groups:
+      loneliness:
+        label: emotional health
+        terms: [lonely, loneliness, "feel alone", "feeling alone", "felt alone", isolated, unloved]
+        reframe: Most couples hit a lonely stretch.
+      mental_health:
+        label: mental health
+        terms: [depressed, depression, anxious, anxiety, "panic attacks", ptsd, adhd, bipolar, "mental illness", suicidal, insecure, insecurity, "low self-esteem", "burned out", burnout, traumatized, codependent, "attachment issues", "avoidant attachment"]
+        reframe: Stress shows up in every relationship.
+      sexual_health:
+        label: sexual health
+        terms: ["erectile dysfunction", ed, impotent, impotence, "premature ejaculation", "low libido", "low sex drive", "no sex drive", "low testosterone", "low t", "performance anxiety", "can't perform", "can't get it up", "trouble in the bedroom", "problems in the bedroom", "sexual dysfunction", std, stds, sti, stis, infertile, infertility]
+        reframe: Intimacy changes over the years, and that's normal.
+      sexual_practices:
+        label: sexual practices
+        terms: [sexless, "dead bedroom", "no sex", "not having sex", "bad in bed", "good in bed", "in bed", "sex life", virgin, kinky, "porn addiction", "addicted to porn", "watch porn", "watching porn"]
+        reframe: Every long relationship goes through quiet seasons.
+      sexual_orientation:
+        label: sexual orientation or gender identity
+        terms: [gay, bisexual, lesbian, queer, homosexual, transgender, closeted, "sexual orientation", "gender identity", "on the down low"]
+        reframe: Every couple writes their own story.
+      financial:
+        label: financial status
+        terms: [broke, bankrupt, bankruptcy, "in debt", "drowning in debt", "money problems", "financial trouble", "can't afford", unemployed, "laid off", "low income"]
+        reframe: Money stress hits almost every couple at some point.
+      age:
+        label: age
+        terms: ["middle-aged", "getting old", "getting older", "midlife crisis", "too old", "older men", "older guys"]
+        patterns: ['\bover (?:30|40|50|60|thirty|forty|fifty|sixty)\b', '\bin (?:your|their) (?:20|30|40|50|60)s\b', '\bin (?:your|their) (?:twenties|thirties|forties|fifties|sixties)\b', '\b\d{2} years old\b']
+        reframe: Couples at every stage of life deal with this.
+      body:
+        label: physical appearance or health
+        terms: [overweight, obese, fat, "dad bod", balding, bald, "beer belly", "out of shape", "hair loss", "receding hairline", ugly, unattractive]
+        reframe: Confidence shows up in how we treat the people we love.
+      health_conditions:
+        label: medical condition
+        terms: [diabetes, diabetic, cancer, "heart disease", "high blood pressure", "chronic pain", "chronic illness", disabled, disability, alcoholic, alcoholism, addict, addiction, "drinking problem", "in recovery"]
+        reframe: Health shapes every relationship.
+      beliefs_identity:
+        label: faith, beliefs, ethnicity or criminal record
+        terms: [christian, muslim, jewish, catholic, mormon, hindu, buddhist, atheist, religious, hispanic, latino, latina, "african american", democrat, republican, felon, "criminal record", convicted, "ex-con", immigrant, undocumented]
+        reframe: Every couple writes their own story.
+    explanation: Meta prohibits ads that assert or imply a personal attribute of the viewer or their family, including physical or mental health, sexual practices or orientation, financial status, age, faith and criminal record. Pairing "you/your" (or a sentence that opens with an implied "you", like "Ever feel...") with an attribute implies the advertiser knows it.
+    suggestion: Speak at the group level or in first person, e.g. "Most couples hit a lonely stretch" or "I felt lonely in my own marriage", instead of telling the viewer what they are.
+    repair: reframe
+
+  - id: implied_relationship_crisis
+    category: Privacy violations and personal attributes
+    severity: warn
+    kind: proximity
+    window: 5
+    referents: [you, your, yours, yourself, "you're", youre, "you've", "you'll", "you'd", ur, u]
+    adjacent_referents: [other, fellow]
+    openers: [ever, feeling, "still feeling", "tired of", "sick of", "struggling with", "dealing with", "going through"]
+    groups:
+      relationship_status:
+        label: relationship status
+        terms: [cheating, cheated, cheater, unfaithful, affair, divorced, divorce, divorcing, separated, "on the rocks", "failing marriage", "unhappy marriage", "loveless marriage", "marriage is dying", "marriage is over", "falling apart", widowed]
+        reframe: Most couples hit a rough patch.
+    explanation: Relationship status is not on Meta's enumerated attribute list, but copy telling the viewer their relationship is failing implies private circumstances and is a frequent manual-review rejection in the relationships vertical.
+    suggestion: Describe the situation at the group level ("Most couples hit a rough patch") or tell it as the creator's own story.
+    repair: reframe
+
+  - id: sexual_explicit
+    category: Adult sexual solicitation and sexually explicit language
+    severity: block
+    terms: [orgasm, orgasms, climax, horny, blowjob, "blow job", "oral sex", anal, porn, porno, pornography, nudes, nude, naked, "sex position", "sex positions", erection, erections, penis, dick, boner, genitals, threesome, "dirty talk", sexting, kink, kinky, "make love", "making love", "get laid", "getting laid", nsfw, xxx]
+    substitutions:
+      - match: '\bmak(?:e|ing) love\b'
+        replace: feel close
+    explanation: Meta's adult content standard (tightened May 2025) restricts sexually explicit language and content discussing sexual practices or experiences, even without solicitation.
+    suggestion: Talk about closeness, connection and affection instead of sexual acts or body parts.
+    repair: substitute
+
+  - id: sexual_enhancement
+    category: Health and wellness, adult products
+    severity: block
+    patterns: ['\blast(?:ing)? longer\b', '\b(?:better|hotter|more|great|amazing|wild|incredible) sex\b', '\bmind[- ]?blowing sex\b', '\bsex ?drive\b', '\blibido\b', '\bstamina\b', '\bperform(?:ance)? in bed\b', '\bsatisfy (?:her|him|your (?:partner|wife|girlfriend|husband))\b', '\bdrive (?:her|him) wild\b', '\bin the sack\b', '\bturn (?:her|him) on\b']
+    substitutions:
+      - match: '\b(?:better|hotter|more|great|amazing|wild|incredible|mind[- ]?blowing) sex\b'
+        replace: a closer connection
+      - match: '\bsex ?drive\b|\blibido\b'
+        replace: connection
+      - match: '\bsatisfy (her|him)\b'
+        replace: understand \1
+      - match: '\bsatisfy your (partner|wife|girlfriend|husband)\b'
+        replace: understand your \1
+      - match: '\bdrive (her|him) wild\b'
+        replace: make \1 laugh
+      - match: '\bturn (her|him) on\b'
+        replace: make \1 smile
+    explanation: Sexual and reproductive health ads must target 18+ and must not focus on sexual pleasure or enhancement; ads must not promote adult sexual arousal products or services.
+    suggestion: Frame the benefit as emotional closeness, communication or confidence, never sexual performance.
+    repair: substitute
+
+  - id: sexual_suggestive
+    category: Adult sexual solicitation and sexually explicit language
+    severity: warn
+    terms: [sex, "sex life", sexy, steamy, spicy, "spice things up", "spice up", bedroom, "in bed", seduce, seduction, foreplay, frisky, naughty, "turned on"]
+    substitutions:
+      - match: '\bsex life\b'
+        replace: connection
+      - match: '\bspice (?:things )?up\b'
+        replace: bring the spark back to
+      - match: '\bsexy\b'
+        replace: attractive
+      - match: '\bsex\b'
+        replace: intimacy
+      - match: '\b(?:steamy|spicy|frisky|naughty)\b'
+        replace: playful
+      - match: '\bbedroom\b'
+        replace: relationship
+      - match: '\bin bed\b'
+        replace: together
+      - match: '\bseduc(?:e|tion)\b'
+        replace: flirt
+      - match: '\bforeplay\b'
+        replace: affection
+      - match: '\bturned on\b'
+        replace: drawn in
+    explanation: Suggestive language is allowed for 18+ audiences, but in a health and wellness context it pushes review toward the adult content standard and lowers delivery quality.
+    suggestion: Prefer "intimacy", "connection" or "closeness"; keep the brand promise non-explicit.
+    repair: substitute
+
+  - id: negative_self_perception
+    category: Personal health and appearance
+    severity: block
+    patterns: ["\\b(?:you're|you are|youre) (?:a )?(?:failing|failure|pathetic|not enough|boring|unattractive|letting her down|a bad (?:husband|boyfriend|partner|lover))\\b", '\bnot (?:a )?real man\b', '\breal men (?:don''t|do|never|always)\b', '\bnot man enough\b', '\bman up\b', '\bbe a man\b', "\\b(?:she|your (?:wife|girlfriend|partner))(?:'s| is) (?:bored|tired|sick|disappointed) (?:of|with) you\\b", "\\b(?:she|your (?:wife|girlfriend|partner))(?:'s| is| will| might)(?: be)? (?:leave|leaving|cheat|cheating)\\b", '\b(?:embarrassing|ashamed|shameful|disgusting|loser)\b', '\b(?:your (?:wife|girlfriend|partner)|she) deserves better\b', '\bshe(?:''ll| will) (?:want|love|respect|desire) you again\b']
+    substitutions:
+      - match: '\bman up\b|\bbe a man\b'
+        replace: show up
+      - match: '[,.!?]?\s*\b(?:your (?:wife|girlfriend|partner)|she) deserves better\b[.!]?'
+        replace: "."
+    explanation: Meta prohibits ads that imply or attempt to generate negative self-perception, exploit insecurities or shame the viewer, a rule enforced strictly for health, wellness and self-improvement offers.
+    suggestion: Lead with an aspiration or the creator's own experience instead of telling the viewer they are failing.
+    repair: substitute
+
+  - id: body_and_weight
+    category: Personal health and appearance
+    severity: block
+    patterns: ['\b(?:lose|drop|shed) (?:\d+|ten|twenty|thirty) (?:pounds|lbs|kg|kilos)\b', '\b(?:burn|melt|blast) (?:belly |stubborn )?fat\b', '\bdad bod\b', '\bget (?:ripped|shredded)\b', '\b(?:flat stomach|six[- ]pack abs|beer belly|love handles)\b']
+    explanation: Meta restricts weight-loss and body-image claims, prohibits implying the viewer's body needs fixing, and bans before/after framing for weight loss; it is out of scope for a relationships product anyway.
+    suggestion: Talk about connection, attention and time together instead of the viewer's body.
+    repair: none
+
+  - id: before_after
+    category: Health and wellness
+    severity: warn
+    terms: ["before and after", "before/after", "before & after", transformation, transformed, "new man", "completely different person"]
+    substitutions:
+      - match: '\btransformation\b'
+        replace: change
+      - match: '\btransformed\b'
+        replace: changed
+      - match: '\bnew man\b'
+        replace: better partner
+    explanation: Side-by-side before/after comparisons are prohibited for weight loss and some treatments and only allowed elsewhere without negative self-perception; transformation framing draws manual review.
+    suggestion: Describe a realistic, specific change over time instead of a before/after contrast.
+    repair: substitute
+
+  - id: guaranteed_outcomes
+    category: Health and wellness, misleading claims
+    severity: block
+    terms: [guaranteed, miracle, overnight, instantly, "instant results", cure, cures, cured, "100%"]
+    patterns: ['\bguarantee[sd]?\b(?! refund)', '\bnever (?:fight|argue) again\b', '\b(?:fix|save|repair)(?:es|s|ed)? (?:any|every|your) (?:marriage|relationship)\b']
+    substitutions:
+      - match: '[,\s]*\bguaranteed\b(?=[.!?]*$)'
+        replace: ""
+      - match: '\bguarantee[sd]?\b'
+        replace: designed
+      - match: '\bnever (fight|argue) again\b'
+        replace: \1 less
+      - match: '\b(?:fix|save|repair)(?:es|s|ed)? (?:any|every|your) (?:marriage|relationship)\b'
+        replace: feel closer
+      - match: '\bovernight\b'
+        replace: over time
+      - match: '\binstant(?:ly)?(?: results)?\b'
+        replace: quickly
+      - match: '\bmiracle\b'
+        replace: simple
+      - match: '\bcure[sd]?\b'
+        replace: help with
+      - match: '100%'
+        replace: really
+    explanation: Meta treats promises of specific or guaranteed outcomes as misleading and as clickbait; health and wellness ads must reflect realistic outcomes.
+    suggestion: Describe what the product helps with and what the creator experienced, without guarantees.
+    repair: substitute
+
+  - id: timeframe_promises
+    category: Low quality or disruptive content
+    severity: warn
+    patterns: ["\\b(?:you'll|you will|will|guaranteed|results)\\b[^.!?]{0,40}\\b(?:in|within) (?:just |only )?(?:\\d+|one|two|three|four|five|six|seven|ten|fourteen|thirty) (?:minutes?|hours?|days?|weeks?|nights?)\\b", "\\b(?:in|within) (?:just |only )?(?:\\d+|one|two|three|four|five|six|seven|ten|fourteen|thirty) (?:minutes?|hours?|days?|weeks?|nights?)\\b[^.!?]{0,30}\\b(?:you'll|you will|guaranteed|or your money)\\b"]
+    substitutions:
+      - match: '\b(?:in|within) (?:just |only )?(?:\d+|one|two|three|four|five|six|seven|ten|fourteen|thirty) (?:minutes?|hours?|days?|weeks?|nights?)\b'
+        replace: over time
+    explanation: Clickbait under Meta's standards includes promises of specific outcomes within a set timeframe without qualifiers.
+    suggestion: Keep timeframes as the creator's own experience ("after 28 days we...") rather than a promise to the viewer.
+    repair: substitute
+
+  - id: clickbait
+    category: Low quality or disruptive content
+    severity: block
+    terms: ["you won't believe", "won't believe what", "one weird trick", "doctors hate", "therapists hate", "what happened next", "what happens next will", "they don't want you to know", "watch till the end", "wait for it", "click to find out"]
+    substitutions:
+      - match: '\bone weird trick\b'
+        replace: one simple habit
+      - match: "\\byou won't believe\\b"
+        replace: here's
+    explanation: Meta's low-quality content standard prohibits clickbait that withholds information or uses exaggerated, sensational hooks to force a click.
+    suggestion: State the specific thing the viewer will learn; curiosity should come from specificity, not withheld information.
+    repair: substitute
+
+  - id: sensational
+    category: Low quality or disruptive content
+    severity: warn
+    terms: [shocking, shocked, insane, unbelievable, "jaw-dropping", "gone wrong", exposed, "blow your mind", "life-changing", "changed my life", "game changer", "game-changer"]
+    substitutions:
+      - match: '\bshock(?:ing|ed)\b|\bunbelievable\b'
+        replace: surprising
+      - match: '\binsane\b'
+        replace: real
+      - match: '\blife[- ]changing\b'
+        replace: meaningful
+      - match: '\bchanged my life\b'
+        replace: changed things for us
+      - match: '\bgame[- ]changer\b'
+        replace: big help
+    explanation: Exaggerated or sensational language is flagged as low quality, reduces delivery and reads as an ad in the first second.
+    suggestion: Swap hype words for a concrete detail from the creator's life.
+    repair: substitute
+
+  - id: engagement_bait
+    category: Low quality or disruptive content
+    severity: block
+    patterns: ['\bcomment (?:yes|below|if|with|"|'')', '\btag (?:a|your|someone|him|her)\b', '\bshare (?:this|if|with)\b', '\blike (?:this|if) (?:you|your)\b', '\b(?:vote|react) (?:with|if|for)\b', '\bfollow for (?:more|part)\b', '\bduet this\b']
+    explanation: Meta prohibits engagement bait that asks people to like, comment, tag or share to inflate distribution.
+    suggestion: End on the product benefit and the real call to action button.
+    repair: drop_sentence
+
+  - id: fake_buttons
+    category: Low quality or disruptive content
+    severity: block
+    patterns: ['\b(?:tap|click|press|hit) (?:the )?play\b', '\bplay button\b', '[▶►⏯]']
+    explanation: Ads must not contain non-functional buttons or imagery that mimics interface elements such as play buttons.
+    suggestion: Use the ad's real call-to-action button and refer to it only as the button below.
+    repair: drop_sentence
+
+  - id: dead_end_cta
+    category: Low quality or disruptive content
+    severity: warn
+    patterns: ['\bswipe up\b', '\blink in (?:bio|description|comments)\b', '\bclick here\b']
+    substitutions:
+      - match: '\bswipe up\b|\bclick here\b'
+        replace: tap below
+      - match: '\blink in (?:bio|description|comments)\b'
+        replace: link below
+    explanation: Calls to action that point to interface elements an ad does not have (bio links, swipe up) mislead viewers and hurt post-click quality.
+    suggestion: Point to the call-to-action button below the video.
+    repair: substitute
+
+  - id: medical_claims
+    category: Health and wellness, misleading claims
+    severity: block
+    terms: ["better than therapy", "instead of therapy", "clinically proven", "scientifically proven", "fda approved", "fda-approved", "doctor approved", "doctor recommended", prescription, medication, diagnose, diagnosis]
+    patterns: ['\breplace[sd]? (?:therapy|your therapist|couples therapy|counseling)\b', '\btreats? (?:ed|erectile|depression|anxiety|ptsd|infertility)\b']
+    substitutions:
+      - match: '\b(?:better than|instead of) therapy\b'
+        replace: a simple daily practice
+      - match: '\b(?:clinically|scientifically) proven\b'
+        replace: coach-designed
+      - match: '\bdoctor (?:approved|recommended)\b'
+        replace: coach-designed
+    explanation: A coaching app cannot make medical or therapeutic efficacy claims; Meta treats unsubstantiated health claims as misleading and prescription references fall under the drugs policy.
+    suggestion: Describe Betterly as guided coaching and exercises for couples, not therapy or treatment.
+    repair: substitute
+
+  - id: unverified_claims
+    category: Misleading claims
+    severity: warn
+    terms: [proven, "science-backed", "research-backed", "#1", "number one", "top-rated", "top rated", "best app", "experts agree", "studies show"]
+    patterns: ['\b\d{1,3}\s?% of (?:couples|men|women|people|marriages|guys)\b']
+    substitutions:
+      - match: '\b(?:science|research)-backed\b'
+        replace: coach-designed
+      - match: '#1|\bnumber one\b|\btop[- ]rated\b|\bbest\b'
+        replace: favorite
+      - match: '\bproven\b'
+        replace: simple
+      - match: '\b(?:experts agree|studies show)\b'
+        replace: many couples find
+    explanation: Superlatives and statistics need substantiation on the landing page; unverifiable claims are rejected as misleading.
+    suggestion: Use the creator's own experience instead of rankings or statistics.
+    repair: substitute
+
+  - id: profanity
+    category: Grammar and profanity
+    severity: block
+    terms: [fuck, fucking, fucked, fucker, motherfucker, shit, shitty, bullshit, bitch, asshole, cunt, pussy, cock, dickhead, "piss off"]
+    patterns: ['\bf+u+c+k+\w*', '\bsh[i1]t+\w*']
+    substitutions:
+      - match: '\bfuck(?:ing|ed)?\b\s?'
+        replace: ""
+      - match: '\bbullshit\b'
+        replace: nonsense
+      - match: '\bshit(?:ty)?\b'
+        replace: stuff
+    explanation: Profanity is disapproved in ad copy and on-screen text and lowers delivery even when the ad is approved.
+    suggestion: Keep the energy with a vivid concrete detail instead of a swear word.
+    repair: substitute
+
+  - id: mild_profanity
+    category: Grammar and profanity
+    severity: warn
+    terms: [damn, hell, crap, sucks, wtf, af, freaking, frickin, pissed, badass, ass]
+    substitutions:
+      - match: '\bdamn\b\s?|\bfreaking\b\s?|\bfrickin\b\s?|\baf\b\s?'
+        replace: ""
+      - match: '\bhell\b'
+        replace: heck
+      - match: '\bcrap\b'
+        replace: stuff
+      - match: '\bsucks\b'
+        replace: is hard
+      - match: '\bwtf\b'
+        replace: what
+      - match: '\bpissed\b'
+        replace: upset
+    explanation: Mild profanity is tolerated in organic UGC but frequently down-ranked or rejected in paid placements.
+    suggestion: Remove the filler swear word; the sentence usually reads stronger without it.
+    repair: substitute
+
+  - id: masked_words
+    category: Grammar and profanity
+    severity: block
+    patterns: ['\b\w*[a-z][\*#@\$]+[a-z]\w*', '\b[a-z]+![a-z]+\b', '\bs3x\w*', '\bseggs\b', '\bsecks\b', '\bunalive\b']
+    explanation: Meta reads symbols that replace letters and algospeak spellings as the underlying word, so masking does not avoid the profanity or adult content rules.
+    suggestion: Rewrite without the masked word.
+    repair: drop_sentence
+
+  - id: solicitation
+    category: Adult sexual solicitation
+    severity: block
+    patterns: ['\b(?:women|girls|singles|milfs?|ladies|wives) (?:near|in) (?:you|your area)\b', '\bmeet (?:hot |lonely |local )?(?:women|girls|singles)\b', '\bsugar daddy\b', '\bdiscreet (?:affair|encounter)s?\b', '\bhook ?ups?\b', '\bone night stands?\b']
+    explanation: Ads must not facilitate or solicit sexual encounters, and dating services need prior written permission; Betterly serves existing couples only.
+    suggestion: Keep the story inside the viewer's existing relationship.
+    repair: drop_sentence
+
+  - id: brand_tone
+    category: Brand safety
+    severity: warn
+    terms: [nag, nagging, "ball and chain", "old lady", "the wife", "crazy ex", psycho, hysterical, whipped, "women are", "men are trash"]
+    substitutions:
+      - match: '\bthe wife\b'
+        replace: my wife
+      - match: '\bnag(?:ging)?\b'
+        replace: frustrated
+      - match: '\bball and chain\b|\bold lady\b'
+        replace: partner
+    explanation: Betterly's voice is honest, warm and non-judgmental; disparaging partners or genders breaks brand tone and invites negative feedback that raises costs.
+    suggestion: Speak about the partner with warmth and take ownership in first person.
+    repair: substitute
+
+  - id: excessive_caps
+    category: Grammar and profanity
+    severity: warn
+    kind: caps
+    min_text_words: 7
+    min_word_length: 3
+    max_caps_words: 1
+    allow: [AI, POV, USA, DIY, FAQ, CEO, ASAP, ADHD, PTSD]
+    explanation: Several fully uppercase words inside longer copy read as shouty, low-quality text. Short headlines are exempt because captions and headlines are uppercased by the render style.
+    suggestion: Use sentence case and let the subtitle and headline style handle emphasis.
+    repair: normalize_caps
+
+  - id: excessive_punctuation
+    category: Grammar and profanity
+    severity: warn
+    patterns: ['[!?]{2,}', '![^!]*!', '\.{4,}', '[!?]\s+[!?]']
+    explanation: Repeated exclamation or question marks read as sensational and low quality.
+    suggestion: Use at most one exclamation mark and single terminal punctuation.
+    repair: normalize_punctuation
+
+  - id: emoji
+    category: Grammar and profanity
+    severity: warn
+    kind: emoji
+    max_emoji: 0
+    explanation: Emoji cannot be spoken by the voice model and render inconsistently in burned-in headlines.
+    suggestion: Remove emoji from spoken and on-screen hook text.
+    repair: strip_emoji

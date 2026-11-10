@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.mitosis/
+runs/
+.env
+.pytest_cache/
+.ruff_cache/
+samples/*.mp4
+samples/*.wav
+.DS_Store
